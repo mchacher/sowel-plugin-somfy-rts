@@ -49,7 +49,26 @@ interface Device {
  *   - data: shutter_position (number, 0..100)
  *   - orders: shutter_move (enum OPEN/CLOSE/STOP) + set_shutter_position (number)
  */
-function discoveredRemote(remoteName: string): Record<string, unknown> {
+function discoveredRemote(remoteName: string, isGate: boolean): Record<string, unknown> {
+  // A single-button gate is blind (no position/state feedback). It exposes one
+  // trigger; Sowel presents it as a `gate` equipment and derives an "unknown"
+  // state. The trigger maps to the bridge's `Toggle` command (see buildCmndTopic).
+  if (isGate) {
+    return {
+      friendlyName: remoteName,
+      manufacturer: "Somfy",
+      model: "RTS gate (via somfyrts2mqtt)",
+      data: [],
+      orders: [
+        {
+          key: "gate_trigger",
+          type: "enum",
+          category: "gate_trigger",
+          enumValues: ["TOGGLE"],
+        },
+      ],
+    };
+  }
   // Keys aligned with the Tasmota Shutter convention so Sowel's
   // `extractShutterGroupKey` / DeviceSelector treat us identically to a
   // real Tasmota device. The order `shutter_position` shares its key with
@@ -99,6 +118,9 @@ export class SomfyRtsEngine {
   /** remoteName → bridge root, so executeOrder knows which cmnd topic to use.
    * First-discovered wins on multi-bridge name collisions (warned in logs). */
   private readonly remoteRoot = new Map<string, string>();
+  /** remoteName → last discovered device type ("shutter" | "gate"), so a type
+   * change in the bridge re-runs discovery with the right shape. */
+  private readonly discoveredType = new Map<string, string>();
 
   constructor(
     integrationId: string,
@@ -196,17 +218,22 @@ export class SomfyRtsEngine {
           this.remoteRoot.set(u.name, root);
         }
 
-        if (!seen.has(u.name)) {
+        const isGate = u.type === "gate";
+        const typeStr = isGate ? "gate" : "shutter";
+        if (!seen.has(u.name) || this.discoveredType.get(u.name) !== typeStr) {
           seen.add(u.name);
-          const discovered = { ...discoveredRemote(u.name), ieeeAddress: u.name };
+          this.discoveredType.set(u.name, typeStr);
+          const discovered = { ...discoveredRemote(u.name, isGate), ieeeAddress: u.name };
           this.deviceManager.upsertFromDiscovery(this.integrationId, this.integrationId, discovered);
           this.deviceManager.updateDeviceStatus(this.integrationId, u.name, "online");
           this.logger.info(
-            { root, remote: u.name },
+            { root, remote: u.name, type: typeStr },
             "Somfy RTS remote discovered",
           );
         }
 
+        // A gate is blind: no position telemetry to push.
+        if (isGate) continue;
         const prev = this.lastPosition.get(u.name);
         if (prev === u.position) continue;
         this.lastPosition.set(u.name, u.position);
@@ -251,6 +278,7 @@ export class SomfyRtsEngine {
         return;
       }
       if (!update) return;
+      if (update.type === "gate") return;  // a gate is blind: no position telemetry
       const prev = this.lastPosition.get(remoteName);
       if (prev === update.position) return;
       this.lastPosition.set(remoteName, update.position);

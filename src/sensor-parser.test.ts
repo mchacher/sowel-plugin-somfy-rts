@@ -6,6 +6,26 @@ import {
   parseJson,
 } from "./sensor-parser.js";
 
+describe("gate support (bridge iter 022)", () => {
+  it("parses the Type hint for a gate remote", () => {
+    const r = parseSensorPayload({
+      driveway: { Position: 0, Direction: 0, Target: 0, Type: "gate" },
+    });
+    expect(r).toHaveLength(1);
+    expect(r[0].type).toBe("gate");
+  });
+  it("leaves type undefined for a shutter (byte-identical legacy payload)", () => {
+    const r = parseSensorPayload({ kitchen: { Position: 10, Direction: 0, Target: 10 } });
+    expect(r[0].type).toBeUndefined();
+  });
+  it("maps a gate_trigger order to the bridge Toggle command", () => {
+    expect(buildCmndTopic("somfyrts2mqtt", "driveway", "gate_trigger", "TOGGLE")).toEqual({
+      topic: "cmnd/somfyrts2mqtt/driveway/Toggle",
+      payload: "",
+    });
+  });
+});
+
 describe("parseSensorPayload", () => {
   it("parses a valid 2-remote payload", () => {
     const result = parseSensorPayload({

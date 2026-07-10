@@ -22,6 +22,11 @@ export interface RemoteUpdate {
   direction: number;
   /** Destination of the current or last motion. 0..100. */
   target: number;
+  /**
+   * Device type hint (bridge iter 022). Present only for non-shutter remotes,
+   * currently `"gate"` (a single-button gate). Absent = roller shutter.
+   */
+  type?: string;
 }
 
 /**
@@ -61,6 +66,7 @@ export function parseSensorPayload(json: unknown): RemoteUpdate[] {
       position: clamp(e.Position, 0, 100),
       direction: typeof e.Direction === "number" ? e.Direction : 0,
       target: typeof e.Target === "number" ? clamp(e.Target, 0, 100) : clamp(e.Position, 0, 100),
+      type: typeof e.Type === "string" ? e.Type : undefined,
     });
   }
   return result;
@@ -93,6 +99,7 @@ export function parseStatAck(
       direction: typeof obj.Direction === "number" ? obj.Direction : 0,
       target:
         typeof obj.Target === "number" ? clamp(obj.Target, 0, 100) : clamp(obj.Position, 0, 100),
+      type: typeof obj.Type === "string" ? obj.Type : undefined,
     },
     error: null,
   };
@@ -127,6 +134,11 @@ export function buildCmndTopic(
   value: unknown,
 ): { topic: string; payload: string } | null {
   const base = `cmnd/${root}/${remoteName}`;
+
+  // Gate (single-button): any trigger maps to the bridge's Toggle command.
+  if (orderKey === "gate_trigger" || orderKey === "gate_toggle") {
+    return { topic: `${base}/Toggle`, payload: "" };
+  }
 
   if (orderKey === "shutter_move" || orderKey === "shutter_state") {
     const v = String(value).toUpperCase();

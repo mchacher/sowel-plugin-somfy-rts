@@ -1,6 +1,6 @@
 {
   "name": "sowel-plugin-somfy-rts",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "Sowel plugin: Somfy RTS shutters and awnings via a somfyrts2mqtt bridge",
   "type": "module",
   "main": "dist/index.js",
