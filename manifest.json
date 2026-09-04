@@ -2,7 +2,7 @@
   "id": "somfy-rts",
   "type": "integration",
   "name": "Somfy RTS Bridge",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Somfy RTS shutters and awnings via a somfyrts2mqtt bridge (ESP32 + CC1101)",
   "icon": "Radio",
   "repo": "mchacher/sowel-plugin-somfy-rts",
