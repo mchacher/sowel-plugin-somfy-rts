@@ -152,7 +152,7 @@ class SomfyRtsPlugin implements IntegrationPlugin {
     }
 
     try {
-      this.mqtt = new MqttConnector(
+      const connector = new MqttConnector(
         mqttUrl,
         { username: mqttUsername, password: mqttPassword, clientId: mqttClientId },
         this.eventBus,
@@ -161,8 +161,15 @@ class SomfyRtsPlugin implements IntegrationPlugin {
         // Keeps `this.status` in sync with the real socket state for the
         // whole lifetime of the plugin, not just a one-shot snapshot taken
         // before the connection may even be established (see #1).
-        (connected) => { this.status = connected ? "connected" : "disconnected"; },
+        // Ignore a connector this plugin no longer owns (a stop/start cycle
+        // leaves the old client emitting for a while), and never resurrect a
+        // start() that failed.
+        (connected) => {
+          if (this.mqtt !== connector || this.status === "error") return;
+          this.status = connected ? "connected" : "disconnected";
+        },
       );
+      this.mqtt = connector;
       await this.mqtt.connect();
 
       this.engine = new SomfyRtsEngine(
