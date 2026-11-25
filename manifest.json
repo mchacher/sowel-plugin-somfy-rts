@@ -2,7 +2,7 @@
   "id": "somfy-rts",
   "type": "integration",
   "name": "Somfy RTS Bridge",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Somfy RTS shutters and awnings via a somfyrts2mqtt bridge (ESP32 + CC1101)",
   "icon": "Radio",
   "repo": "mchacher/sowel-plugin-somfy-rts",
@@ -14,7 +14,8 @@
       "label": "MQTT Broker URL",
       "type": "text",
       "required": true,
-      "placeholder": "mqtt://localhost:1883"
+      "placeholder": "mqtt://host.docker.internal:1883",
+      "defaultValue": "mqtt://host.docker.internal:1883"
     },
     {
       "key": "mqtt_username",

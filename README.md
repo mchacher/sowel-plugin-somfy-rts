@@ -17,7 +17,7 @@ The bridge is an ESP32 + CC1101 device that re-transmits paired remotes' RF code
 
 | Key             | Required | Default            | Notes                                                                       |
 | --------------- | -------- | ------------------ | --------------------------------------------------------------------------- |
-| MQTT Broker URL | yes      | —                  | `mqtt://host:1883` or `mqtts://host:8883`                                   |
+| MQTT Broker URL | yes      | `mqtt://host.docker.internal:1883` | `mqtt://host:1883` or `mqtts://host:8883`                                   |
 | MQTT Username   | no       | —                  |                                                                             |
 | MQTT Password   | no       | —                  | Stored as a secret, redacted in logs                                        |
 | MQTT Client ID  | no       | `sowel-somfy-rts`  | A random suffix is appended automatically to avoid broker collisions        |
